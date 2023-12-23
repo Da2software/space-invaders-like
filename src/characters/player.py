@@ -13,10 +13,11 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, col, x, y):
         pygame.sprite.Sprite.__init__(self)
         # player attributes
+        self.tag = "player"
         self.movex_speed = 400
         self.movey_speed = 400
         self.life = 100
-        self.isDead = False
+        self.is_dead = False
         # player rendering
         self.image = pygame.Surface((40, 40))
         self.image.fill(col)
@@ -79,18 +80,17 @@ class Player(pygame.sprite.Sprite):
 
     def take_damage(self, damage: int):
         self.life -= damage
-
-    def kill(self) -> None:
-        self.isDead = True
-        self.kill()
+        self.is_dead = self.life <= 0
 
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, player: Player):
         pygame.sprite.Sprite.__init__(self)
         # Bullet attributes
-        self.dame = 10
+        self.tag = "bullet"
+        self.damage = 10
         self.speed = 10
+        self.is_dead = False  # in case bullet hits an Enemy
         # Rendering Variables
         self.image = pygame.Surface((5, 8))
         self.image.fill("cyan")
@@ -100,10 +100,17 @@ class Bullet(pygame.sprite.Sprite):
             player_pos.x + (player.rect.width / 2), player_pos.y)
 
     def update(self) -> None:
-        # move up the bullet to hit enemies
-        self.rect.move_ip(0, -self.speed)
-        if self.rect.bottom > GLOBALS.screen.get_height():
+        # check if bullet got hit
+        if self.is_dead:
             self.kill()
+            return
+            # move up the bullet to hit enemies
+        self.rect.move_ip(0, -self.speed)
+        if self.rect.bottom < 0:
+            self.kill()
+
+    def hit(self):
+        self.is_dead = True
 
 
 class PlayerController:
@@ -113,7 +120,7 @@ class PlayerController:
                              GLOBALS.screen.get_height() - 50)
         # create the Sprites Groups related with the player
         self.playerGroup = pygame.sprite.Group()
-        self.playerGroup.add(self.player) # add player to the group
+        self.playerGroup.add(self.player)  # add player to the group
         # set 1 second shoot rate
         self.shoot_rate = 0.6
         self.shoot_timer = 0.6
