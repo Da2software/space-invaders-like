@@ -37,7 +37,7 @@ class EnemyBasic(Enemy):
         self.rect.center = (x, y)
         self.move_dir: Position2D = Position2D()
         self.x_dir = 0
-        self.player_pos: Position2D | None = None
+        self.player_pos: Position2D = None
 
     def update(self, player) -> None:
         # check if enemy is dead
