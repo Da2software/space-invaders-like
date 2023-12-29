@@ -8,7 +8,7 @@ GLOBALS = GameVariables()
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, x: int, y: int, size=40):
         pygame.sprite.Sprite.__init__(self)
         self.tag = "enemy"
         self.type = 1
@@ -18,23 +18,29 @@ class Enemy(pygame.sprite.Sprite):
         self.is_dead = False
         self.die_animation = 0
 
+        # Rendering Variables
+        self.image = pygame.Surface((size, size))
+        self.image.fill("red")
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
     def take_damage(self, damage: int) -> None:
         self.life -= damage
         if self.life <= 0:
             self.is_dead = True
             GLOBALS.score += self.points
-            print(GLOBALS.score)
+
+    def get_pos(self) -> Position2D:
+        return Position2D(self.rect.x, self.rect.y)
+
+    def __str__(self):
+        return f"({self.tag}, {self.life}, {self.type})"
 
 
 class EnemyBasic(Enemy):
-    def __init__(self, x: int, y: int):
-        super().__init__()
+    def __init__(self, x: int, y: int, size=40):
+        super().__init__(x, y, size)
         self.animation_time = 0  # 1 second delay
-        # Rendering Variables
-        self.image = pygame.Surface((30, 30))
-        self.image.fill("red")
-        self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
         self.move_dir: Position2D = Position2D()
         self.x_dir = 0
         self.player_pos: Position2D = None
@@ -44,6 +50,8 @@ class EnemyBasic(Enemy):
         if self.is_dead:
             self.kill()
             return
+
+        return
         # set player position
         self.player_pos = player.get_pos()
 
@@ -76,6 +84,7 @@ class EnemyBasic(Enemy):
         self.animation_time += GLOBALS.delta_time
 
 
+# todo: remove this later and move it to the level maker/controller
 class EnemiesController:
     def __init__(self):
         self.timers = {}
@@ -103,11 +112,10 @@ class EnemiesController:
 
     def render(self, player_group: pygame.sprite.Group):
         """
-        :param player_group: playerGrop to be as a target, also to be
+        :param player_group: playerGroup to be as a target, also to be
          used as a collider
         :return:
         """
-        # todo: remove this later and add the level maker here
         if not self.spawn:
             self.spawn = True
             enemy = EnemyBasic(

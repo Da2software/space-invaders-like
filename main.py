@@ -1,7 +1,6 @@
 # Example file showing a circle moving on screen
 import pygame
-from src.characters.player import PlayerController
-from src.characters.enemy import EnemiesController
+from src.levelTools import LevelController
 from src.globals import GameVariables
 
 # pygame setup
@@ -18,10 +17,8 @@ GLOBALS.screen = pygame.display.set_mode((600, 600))
 clock = pygame.time.Clock()
 running = True
 
-# Create player controller
-playerController = PlayerController()
-# Create enemy controller
-enemiesController = EnemiesController()
+# start level controller
+level = LevelController()
 
 while running:
     # poll for events
@@ -33,10 +30,8 @@ while running:
     # fill the screen with a color to wipe away anything from last frame
     GLOBALS.screen.fill("black")
 
-    # render player actions
-    playerController.render()
-    # render enemies actions
-    enemiesController.render(playerController.playerGroup)
+    # render level
+    level.execute()
 
     # flip() the display to put your work on screen
     pygame.display.flip()
