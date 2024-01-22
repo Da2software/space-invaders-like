@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from pygame import Rect
 from typing import List
 from enum import Enum
@@ -22,6 +22,9 @@ class FrameMap:
         self.start = start
         self.end = end
 
+    def __str__(self):
+        return f"({self.key}, {self.start}, {self.end})"
+
 
 class Animation:
     def __init__(self, animation_id: str, duration=500, frames=10):
@@ -39,6 +42,7 @@ class Animation:
         self.__key_frames = {}
         self.__frame_mapping: List[FrameMap] = []
         self.__map_frames()
+        self.__build_key_frames()
 
     def __str__(self):
         return (f"(id: {self.id},\n duration: {self.__duration},\n "
@@ -65,7 +69,12 @@ class Animation:
         self.__frames = size
         self.__map_frames()
 
+    def get_frame_size(self) -> int:
+        return len(self.__frame_mapping)
+
     def __map_frames(self):
+        if self.__duration <= 0:
+            return
         segment = round(self.__duration / self.__frames)
         self.__frame_mapping = []
         for key_f in range(0, self.__frames):
@@ -76,25 +85,26 @@ class Animation:
             )
 
     def __build_key_frames(self):
-        # NOTE: maybe we don't need this later
+        if self.__duration <= 0:
+            return
         for key_p in range(0, self.__frames + 1):
             self.__key_frames[str(key_p)] = KeyFrame(Rect(0, 0, 0, 0),
                                                      Curve.linear)
 
-    def set_key_frames(self, key: str, key_frame: KeyFrame):
+    def set_key_frame(self, key: str, key_frame: KeyFrame):
         self.__key_frames[key] = key_frame
 
-    def get_key_frame(self, key):
+    def get_key_frame(self, key) -> KeyFrame:
         return self.__key_frames[key]
 
-    def get_frame_by_time(self, timer: int):
+    def get_frame_by_time(self, timer: int) -> KeyFrame:
         """
         Get the key based on the timer of the animation
         :param timer: current animation time between start to end duration
         :return: KeyFrame
         """
         for map_f in self.__frame_mapping:
-            if map_f.start >= timer < map_f.end:
+            if map_f.start <= timer < map_f.end:
                 return self.__key_frames[map_f.key]
         raise KeyError(f"Key Frame not found!")
 
@@ -104,7 +114,9 @@ class Animation:
 
 
 class AnimationCollection:
-    def __init__(self, animations: List[Animation] = []):
+    def __init__(self, animations: List[Animation] = None):
+        if not animations:
+            animations = []
         self.__animations = animations
         self.validate()
         self.index = 0
@@ -118,7 +130,10 @@ class AnimationCollection:
             self.index += 1
             return current_item
         else:
-            return StopIteration
+            raise StopIteration
+
+    def __len__(self):
+        return len(self.__animations)
 
     def validate(self):
         """
@@ -158,12 +173,45 @@ class Animator(ABC):
         self.timer = 0
         self.current_anim: Animation | None = None
         self.last_anim: str | None = None
+        self.exclude_props = []
+
+    @abstractmethod
+    def define_animations(self):
+        """
+        Define all animations you object will use, and in order to create that
+        use the {self.animations} value
+        :return: None
+        """
+
+    def __copy_props(self, _from: Rect, _to: Rect):
+        """
+        Copy all properties from and object to other but without override the
+        instance reference for the original
+        :param _from: object to take the properties
+        :param _to: objects to pass the properties
+        :return: None
+        """
+        for key, value in _from.__dict__.items():
+            if key in self.exclude_props:
+                continue
+            setattr(_to, key, value)
 
     def run_animation(self, anim_id: str):
+        """
+        Run a specific animation
+        :param anim_id: animation ID
+        :return: None
+        """
         self.current_anim = self.animations.get_animation(anim_id)
         self.timer = 0
 
     def render(self, animated_subject: Rect):
+        """
+        used to execute the animation and change frames according to the
+        timer
+        :param animated_subject: original {Rect} object to apply the animations
+        :return: None
+        """
         # first detect if time is out of the duration
         if self.timer >= self.current_anim.get_duration():
             # then we stop the animation
@@ -175,6 +223,6 @@ class Animator(ABC):
         if not self.current_anim:
             return
         # set all properties to the original component
-        animated_subject.size = self.current_anim.get_frame_by_time(self.timer)
-
+        frame: Rect = self.current_anim.get_frame_by_time(self.timer)
+        self.__copy_props(_from=frame, _to=animated_subject)
         self.timer += self.delta  # update timer
