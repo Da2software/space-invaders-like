@@ -43,3 +43,11 @@ pip install -r requirements.txt
 ~~~shell
 python main.py
 ~~~
+
+## how to run unit tests
+
+you need to run the virtual env first
+
+~~~shell
+python run_test.py
+~~~

@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from pygame import Rect
+
+import pygame.transform
+from pygame import Rect, Surface
 from typing import List
 from enum import Enum
-import copy
+from src.globals import GameVariables
 
 
 class Curve(Enum):
@@ -10,8 +12,33 @@ class Curve(Enum):
     smooth = 2
 
 
+class AnimationTransform:
+    def __init__(self, x=0, y=0, width=10, height=10, angle=0):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.angle = angle
+        self.__pivot = (0, 0)
+
+    def set_pivot(self, x, y):
+        if x < 0 or x > self.width:
+            raise ValueError(f"x axis ({x}) pivot can not be out of the "
+                             f"width limit ({self.width}) or less"
+                             f"than 0")
+        if y < 0 or y > self.height:
+            raise ValueError(f"x axis ({y}) pivot can not be out of the "
+                             f"height limit ({self.height}) or less"
+                             f"than 0")
+        self.__pivot = (x, y)
+
+    def get_pivot(self):
+        return self.__pivot
+
+
 class KeyFrame:
-    def __init__(self, frame: Rect, curve: Curve):
+    def __init__(self, frame: AnimationTransform = AnimationTransform(),
+                 curve: Curve = Curve.linear):
         self.frame = frame
         self.curve = curve
 
@@ -88,16 +115,19 @@ class Animation:
         if self.__duration <= 0:
             return
         for key_p in range(0, self.__frames + 1):
-            self.__key_frames[str(key_p)] = KeyFrame(Rect(0, 0, 0, 0),
-                                                     Curve.linear)
+            self.__key_frames[str(key_p)] = KeyFrame()
 
     def set_key_frame(self, key: str, key_frame: KeyFrame):
+        """
+        key is basically a frame position from 0 to any number but
+        in string format, because keyframes are saved in an object
+        """
         self.__key_frames[key] = key_frame
 
     def get_key_frame(self, key) -> KeyFrame:
         return self.__key_frames[key]
 
-    def get_frame_by_time(self, timer: int) -> KeyFrame:
+    def get_frame_by_time(self, timer: int) -> (KeyFrame, str):
         """
         Get the key based on the timer of the animation
         :param timer: current animation time between start to end duration
@@ -105,12 +135,8 @@ class Animation:
         """
         for map_f in self.__frame_mapping:
             if map_f.start <= timer < map_f.end:
-                return self.__key_frames[map_f.key]
+                return self.__key_frames[map_f.key], map_f.key
         raise KeyError(f"Key Frame not found!")
-
-    @staticmethod
-    def clone_frame(frame: Rect, curve: Curve):
-        return KeyFrame(copy.deepcopy(frame), curve)
 
 
 class AnimationCollection:
@@ -169,11 +195,11 @@ class Animator(ABC):
 
     def __init__(self):
         self.animations = AnimationCollection()
-        self.delta = 0
         self.timer = 0
         self.current_anim: Animation | None = None
+        self.last_key_frame: str | None = None
         self.last_anim: str | None = None
-        self.exclude_props = []
+        self.define_animations()
 
     @abstractmethod
     def define_animations(self):
@@ -182,19 +208,25 @@ class Animator(ABC):
         use the {self.animations} value
         :return: None
         """
+        pass
 
-    def __copy_props(self, _from: Rect, _to: Rect):
+    def __do_transform(self, target: Rect, key_frame: KeyFrame):
         """
-        Copy all properties from and object to other but without override the
-        instance reference for the original
-        :param _from: object to take the properties
-        :param _to: objects to pass the properties
+        Change/move rect properties to the expected position
+        just adding or subtracting the values from the transform object.
+        :param target: object to apply changes/moves
+        :param transform: objects to pass the properties
         :return: None
         """
-        for key, value in _from.__dict__.items():
-            if key in self.exclude_props:
-                continue
-            setattr(_to, key, value)
+        if key_frame.curve == Curve.linear:
+            target.y += key_frame.frame.y
+            target.x += key_frame.frame.x
+            target.width += key_frame.frame.width
+            target.height += key_frame.frame.height
+        elif key_frame.curve == Curve.smooth:
+            target.move_ip(key_frame.frame.x, key_frame.frame.y)
+
+        # rotation is complicated with just rects, we need to change tha
 
     def run_animation(self, anim_id: str):
         """
@@ -205,7 +237,7 @@ class Animator(ABC):
         self.current_anim = self.animations.get_animation(anim_id)
         self.timer = 0
 
-    def render(self, animated_subject: Rect):
+    def render_animation(self, animated_subject: Rect):
         """
         used to execute the animation and change frames according to the
         timer
@@ -213,7 +245,7 @@ class Animator(ABC):
         :return: None
         """
         # first detect if time is out of the duration
-        if self.timer >= self.current_anim.get_duration():
+        if self.current_anim and self.timer >= self.current_anim.get_duration():
             # then we stop the animation
             self.timer = 0
             self.last_anim = self.current_anim.id
@@ -223,6 +255,10 @@ class Animator(ABC):
         if not self.current_anim:
             return
         # set all properties to the original component
-        frame: Rect = self.current_anim.get_frame_by_time(self.timer)
-        self.__copy_props(_from=frame, _to=animated_subject)
-        self.timer += self.delta  # update timer
+        frame, new_key = self.current_anim.get_frame_by_time(
+            self.timer)
+        if self.last_key_frame != new_key:
+            self.__do_transform(target=animated_subject, key_frame=frame)
+        self.last_key_frame = new_key
+        self.timer += GameVariables().delta_time * 1000  # update timer on milliseconds
+        print(self.timer)

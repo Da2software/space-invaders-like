@@ -1,15 +1,16 @@
 import pygame
 from src.globals import GameVariables
 from src.utils import Position2D
+from src.kinematics import kinematics
 import random
-import math
 
 GLOBALS = GameVariables()
 
 
-class Enemy(pygame.sprite.Sprite):
+class Enemy(pygame.sprite.Sprite, kinematics.Animator):
     def __init__(self, x: int, y: int, size=40):
         pygame.sprite.Sprite.__init__(self)
+        kinematics.Animator.__init__(self)
         self.tag = "enemy"
         self.type = 1
         self.life = 10
@@ -38,6 +39,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class EnemyBasic(Enemy):
+
     def __init__(self, x: int, y: int, size=40):
         super().__init__(x, y, size)
         self.animation_time = 0  # 1 second delay
@@ -45,12 +47,26 @@ class EnemyBasic(Enemy):
         self.x_dir = 0
         self.player_pos: Position2D = None
 
+    def define_animations(self):
+        idle = kinematics.Animation(
+            animation_id="idle", duration=1000, frames=5)
+        idle.set_key_frame('0', kinematics.KeyFrame(
+            kinematics.AnimationTransform(),  kinematics.Curve.smooth))
+        idle.set_key_frame('1', kinematics.KeyFrame(
+            kinematics.AnimationTransform(x=2, y=2),  kinematics.Curve.smooth))
+        idle.set_key_frame('2', kinematics.KeyFrame(
+            kinematics.AnimationTransform(x=2, y=2), kinematics.Curve.smooth))
+        idle.set_key_frame('3', kinematics.KeyFrame(
+            kinematics.AnimationTransform(x=-4, y=-4), kinematics.Curve.smooth))
+        self.animations.append(idle)
+        self.run_animation("idle")
+
     def update(self, player) -> None:
         # check if enemy is dead
         if self.is_dead:
             self.kill()
             return
-
+        self.render_animation(self.rect)
         return
         # set player position
         self.player_pos = player.get_pos()
