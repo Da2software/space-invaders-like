@@ -4,5 +4,21 @@
   },
   {
     "common": "zigzag"
+  },
+  {
+    "name": "kamikaze-left",
+    "duration": 2500,
+    "frames": 60,
+    "key_frames": [
+        {"frame": "60", "x": -500, "y": 500}
+    ]
+  },
+  {
+    "name": "kamikaze-right",
+    "duration": 2500,
+    "frames": 60,
+    "key_frames": [
+        {"frame": "60", "x": 500, "y": 500}
+    ]
   }
 ]

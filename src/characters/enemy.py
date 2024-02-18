@@ -46,93 +46,25 @@ class EnemyBasic(Enemy):
         self.move_dir: Position2D = Position2D()
         self.x_dir = 0
         self.player_pos: Position2D = None
-        self.idle = False
+        self.idle = True
+        self.action_time = random.randint(2000, 8000)
+        self.action_timer = 0
+        self.initial_pos = {"x": x, "y": y}
+        self.run_animation("idle", True)
 
     def update(self, player) -> None:
-        if not self.idle:
-            self.run_animation("zigzag", True)
-            self.idle = True
+        if (self.action_timer > self.action_time and
+                random.randint(0, 200) == 0 and self.idle):
+            self.stop_animation()
+            self.idle = False
+            attack_anims = ["zigzag", "zigzag",
+                            "kamikaze-left", "kamikaze-right"]
+            animation_id = attack_anims[random.randint(0, 3)]
+            self.run_animation(animation_id, True)
         # check if enemy is dead
         if self.is_dead:
             self.kill()
             return
         self.render_animation(self.rect)
-        return
-        # set player position
-        self.player_pos = player.get_pos()
-
-        # start moving towards the player after 1 second
-        if self.animation_time > 1:
-            # moving direction according player position (x-axis)
-            self.move_dir.y = self.move_speed
-            # random change move direction each 2 seconds
-            if random.randrange(0, 80) == 0:
-                self.x_dir = -self.x_dir
-            # 3 seconds after enemy spawn we can do the animation
-            if self.animation_time < 3:
-                self.move_dir.x = self.move_speed * self.x_dir
-            self.rect.move_ip(self.move_dir.x, self.move_dir.y + 2)
-        # Then, if the enemy reaches the end of the window screen, it will be
-        # respawned.
-        if self.rect.top > GLOBALS.screen.get_height():
-            # reset timer to 1 second
-            self.animation_time = 1
-            # reset y position to top
-            self.rect.y = -self.rect.height
-            # reset x according to last position
-            if self.rect.x < 0:
-                self.rect.x = 0
-            elif self.rect.x > GLOBALS.screen.get_width():
-                self.rect.x = GLOBALS.screen.get_width()
-            self.x_dir = 1 if self.player_pos.x > self.rect.left else -1
-
-        # update animation time
-        self.animation_time += GLOBALS.delta_time
-
-
-# todo: remove this later and move it to the level maker/controller
-class EnemiesController:
-    def __init__(self):
-        self.timers = {}
-        self.enemiesGroup = pygame.sprite.Group()
-        self.spawn = False
-
-    @staticmethod
-    def get_player_from_group(player_group: pygame.sprite.Group):
-        player = None
-        for items in player_group.spritedict:
-            if items.tag == "player":
-                player = items
-                break
-        return player
-
-    @staticmethod
-    def check_hit(player_group: pygame.sprite.Group,
-                  enemies_group: pygame.sprite.Group):
-        for enemy in enemies_group.spritedict:
-            for bullet in player_group.spritedict:
-                if bullet.tag == "bullet":
-                    if bullet.rect.colliderect(enemy.rect):
-                        enemy.take_damage(bullet.damage)
-                        bullet.hit()
-
-    def render(self, player_group: pygame.sprite.Group):
-        """
-        :param player_group: playerGroup to be as a target, also to be
-         used as a collider
-        :return:
-        """
-        if not self.spawn:
-            self.spawn = True
-            enemy = EnemyBasic(
-                random.randrange(0, GLOBALS.screen.get_width() - 30), 0)
-            self.enemiesGroup.add(enemy)
-        # get player instance
-        player = self.get_player_from_group(player_group)
-
-        # check enemies gets a bullet hit
-        self.check_hit(player_group, self.enemiesGroup)
-
-        # render enemies
-        self.enemiesGroup.update(player)
-        self.enemiesGroup.draw(GLOBALS.screen)
+        self.action_timer += GLOBALS.ms_fps if (
+                self.action_timer < self.action_time) else 0

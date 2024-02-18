@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import math
 
 import pygame.transform
 import json
@@ -213,9 +214,6 @@ class Animator(ABC):
         self.last_time_frame: str | None = None
         # this takes the last animation name/id
         self.last_anim: str | None = None
-        # last key frame takes the last frame with key point property to be
-        # able to create a smooth move animation
-        self.last_key_frame: None | KeyFrame = None
         self.set_name = "basic"
         self.define_animations()
         self.__on_pause = False
@@ -290,6 +288,7 @@ class Animator(ABC):
             self.make_smooth(new_animation)  # smooth process
             self.animations.append(new_animation)
 
+    # TODO: add on_stop_animation methods, can be useful
     @staticmethod
     def make_smooth(animation: Animation):
         """
@@ -305,10 +304,9 @@ class Animator(ABC):
         middle_frames: List[str] = []  # just save indexes
 
         for key in list(animation.get_key_frame_list().keys())[::-1]:
-            if anim_frames[key].key_point:
-                # take current key point that is smooth
-                smooth_point_key = key if (
-                        anim_frames[key].curve == Curve.smooth) else None
+            # in case we are at the beginning (frame 0) and the last key point
+            # registered is smooth then we need to preprocess the last one
+            if anim_frames[key].key_point or (smooth_point_key and key == '0'):
                 # each time we reach a key point we need override middle frames
                 middle_frames_size = len(middle_frames)
                 # just in case we have middle frames
@@ -321,8 +319,11 @@ class Animator(ABC):
                         if obj_key == '_AnimationTransform__pivot':
                             continue
                         # avoid dive by zero error
-                        new_transform.__dict__[obj_key] = (
-                                point_val / middle_frames_size) if (
+                        division = point_val / middle_frames_size
+                        # minimum value is 1
+                        division = math.copysign(1, division) \
+                            if -1 < division < 1 else round(division)
+                        new_transform.__dict__[obj_key] = division if (
                                 point_val != 0) else 0
                     # set the mew value over all middle frames
                     for frame_key in middle_frames:
@@ -336,6 +337,9 @@ class Animator(ABC):
                     # the new movement
                     anim_frames[
                         smooth_point_key].frame = AnimationTransform()
+                # take current key point that is smooth
+                smooth_point_key = key if (
+                        anim_frames[key].curve == Curve.smooth) else None
             # in case we found a smooth point we can now map the middle frames
             elif smooth_point_key and not anim_frames[key].key_point:
                 middle_frames.append(key)
@@ -353,13 +357,19 @@ class Animator(ABC):
         # TODO: rotation is complicated with just rects, we need to change
         #  that and also add the width and height transform
 
-    def run_animation(self, anim_id: str, loop: bool = False):
+    def run_animation(self, anim_id: str, loop: bool = False,
+                      restart: bool = False):
         """
         Run a specific animation
         :param anim_id: animation ID
         :param loop: set the animation as a loop
+        :param restart: in case animation is already running we can restart the
+        animation
         :return: None
         """
+        # avoid run again the animation
+        if self.current_anim and self.current_anim.id == anim_id and not restart:
+            return
         self.current_anim = self.animations.get_animation(anim_id)
         self.timer = 0
         self.loop = loop
@@ -387,10 +397,9 @@ class Animator(ABC):
             return
         # first detect if time is out of the duration
         if self.current_anim and self.timer >= self.current_anim.get_duration():
+            self.stop_animation()
             if self.loop:
-                self.run_animation(self.current_anim.id, True)
-            else:
-                self.stop_animation()
+                self.run_animation(self.last_anim, True)
 
         # in case we don't have an animation then we just avoid run something
         if not self.current_anim:
@@ -399,16 +408,9 @@ class Animator(ABC):
         frame, time_key = self.current_anim.get_frame_by_time(
             self.timer)
 
-        # to create a smooth animation version we need to take the last key
-        # transform and apply it during the next key point appears
-        # in case we are in different time key then we need to render
-        # the new key, but
-        if frame.key_point and self.last_time_frame != time_key:
-            self.last_key_frame = frame
-        if self.last_time_frame != time_key and frame.curve == Curve.linear:
+        if self.last_time_frame != time_key:
             self.__do_transform(target=animated_subject, key_frame=frame)
         self.last_time_frame = time_key
         # frame rate is 60, then 60 frames = 1000 ms(1s),
         # result 1 frame = 16.666666667
-        self.timer += 16.666666667  # update timer
-        print(self.timer, end="\r")
+        self.timer += GLOBALS.ms_fps  # update timer

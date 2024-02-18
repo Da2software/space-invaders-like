@@ -20,6 +20,6 @@ class GameVariables(metaclass=SingletonMeta):
     def __init__(self):
         self.screen = None
         self.delta_time = 0
+        self.ms_fps = 16.666666667  # milliseconds peer frame (60 fps)
         self.score = 0
         self.level = 1
-
