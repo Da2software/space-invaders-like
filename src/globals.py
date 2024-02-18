@@ -1,3 +1,4 @@
+import pygame.display
 class SingletonMeta(type):
     """
     Base singleton Class to be used to create the business logic
@@ -18,7 +19,7 @@ class GameVariables(metaclass=SingletonMeta):
     """
 
     def __init__(self):
-        self.screen = None
+        self.screen: pygame.Surface = None
         self.delta_time = 0
         self.ms_fps = 16.666666667  # milliseconds peer frame (60 fps)
         self.score = 0
