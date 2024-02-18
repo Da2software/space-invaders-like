@@ -46,22 +46,12 @@ class EnemyBasic(Enemy):
         self.move_dir: Position2D = Position2D()
         self.x_dir = 0
         self.player_pos: Position2D = None
-
-    def define_animations(self):
-        idle = kinematics.Animation(
-            animation_id="idle", duration=1000, frames=5)
-        idle.set_key_frame('0', kinematics.KeyFrame(
-            kinematics.AnimationTransform(),  kinematics.Curve.smooth))
-        idle.set_key_frame('1', kinematics.KeyFrame(
-            kinematics.AnimationTransform(x=2, y=2),  kinematics.Curve.smooth))
-        idle.set_key_frame('2', kinematics.KeyFrame(
-            kinematics.AnimationTransform(x=2, y=2), kinematics.Curve.smooth))
-        idle.set_key_frame('3', kinematics.KeyFrame(
-            kinematics.AnimationTransform(x=-4, y=-4), kinematics.Curve.smooth))
-        self.animations.append(idle)
-        self.run_animation("idle")
+        self.idle = False
 
     def update(self, player) -> None:
+        if not self.idle:
+            self.run_animation("zigzag", True)
+            self.idle = True
         # check if enemy is dead
         if self.is_dead:
             self.kill()

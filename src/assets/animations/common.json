@@ -1,0 +1,28 @@
+{
+ "idle": {
+    "name": "idle",
+    "duration": 5000,
+    "frames": 60,
+    "key_frames": [
+        {"frame": "6", "x": 5, "y": 5},
+        {"frame": "12", "x": 5, "y": -5},
+        {"frame": "18", "x": -5, "y": 5},
+        {"frame": "24", "x": -5, "y": -5},
+        {"frame": "30", "x": -5, "y": 5},
+        {"frame": "36", "x": -5, "y": -5},
+        {"frame": "42", "x": 5, "y": 5},
+        {"frame": "48", "x": 5, "y": -5},
+        {"frame": "54", "x": 5, "y": -5}
+    ]
+  },
+  "zigzag": {
+    "name": "zigzag",
+    "duration": 2000,
+    "frames": 60,
+    "key_frames": [
+        {"frame": "30", "x": 100, "y": 100},
+        {"frame": "40", "x": -100, "y": 100},
+        {"frame": "60", "x": 100, "y": 100}
+    ]
+  }
+}

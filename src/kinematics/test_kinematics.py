@@ -4,6 +4,7 @@ from src.kinematics.kinematics import (
     Animation,
     AnimationCollection,
     Animator,
+    AnimationTransform,
     Curve,
     KeyFrame,
 )
@@ -44,10 +45,10 @@ class AnimationTest(unittest.TestCase):
 
     def test_get_frame_by_time(self):
         animation = Animation("test_animation", duration=1000, frames=20)
-        key_frame = KeyFrame(Rect(10, 10, 10, 10), Curve.linear)
+        key_frame = KeyFrame(AnimationTransform(10, 10, 10, 10), Curve.linear)
         animation.set_key_frame("3", key_frame)
         # key frame 3 is placed between 150 and 200 ms
-        frame = animation.get_frame_by_time(175)
+        frame, curve = animation.get_frame_by_time(175)
         self.assertEqual(frame.frame.y, key_frame.frame.y)
         self.assertEqual(frame.frame.x, key_frame.frame.x)
 
