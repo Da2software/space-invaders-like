@@ -207,6 +207,8 @@ class Animator(ABC):
     """
 
     def __init__(self):
+        # used to force run define animation method on child class
+        self.__defined = False
         self.animations = AnimationCollection()
         self.timer = 0
         self.current_anim: Animation | None = None
@@ -214,10 +216,9 @@ class Animator(ABC):
         self.last_time_frame: str | None = None
         # this takes the last animation name/id
         self.last_anim: str | None = None
-        self.set_name = "basic"
-        self.define_animations()
         self.__on_pause = False
         self.loop = False
+        self.animation_delay = 0
 
     @staticmethod
     def get_animation_set(set_name):
@@ -226,12 +227,15 @@ class Animator(ABC):
             animation_set = json.load(f)
         return animation_set
 
-    def define_animations(self):
+    def define_animations(self, set_name):
         """
-        This creates all the animations based on the json files
+        This creates all the animations based on the json files,
+        this is requited to be run over each child class, in oder to
+        create the animation collection base on its type
         :return: None
         """
-        animation_sets = self.get_animation_set(self.set_name)
+        self.__defined = True
+        animation_sets = self.get_animation_set(set_name)
         common_sets = self.get_animation_set("common")
         """
         animation_set = [
@@ -288,7 +292,6 @@ class Animator(ABC):
             self.make_smooth(new_animation)  # smooth process
             self.animations.append(new_animation)
 
-    # TODO: add on_stop_animation methods, can be useful
     @staticmethod
     def make_smooth(animation: Animation):
         """
@@ -368,7 +371,8 @@ class Animator(ABC):
         :return: None
         """
         # avoid run again the animation
-        if self.current_anim and self.current_anim.id == anim_id and not restart:
+        if (self.current_anim and self.current_anim.id == anim_id
+                and not restart):
             return
         self.current_anim = self.animations.get_animation(anim_id)
         self.timer = 0
@@ -377,7 +381,7 @@ class Animator(ABC):
     def stop_animation(self):
         # then we stop the animation
         self.timer = 0
-        self.last_anim = self.current_anim.id
+        self.last_anim = self.current_anim.id if self.current_anim else None
         self.current_anim = None
 
     def pause_animation(self):
@@ -393,6 +397,15 @@ class Animator(ABC):
         :param animated_subject: original {Rect} object to apply the animations
         :return: None
         """
+        # check if animations are defined
+        if not self.__defined:
+            raise Exception("Define animations required, "
+                            "use 'define_animations(str_name)' "
+                            "method on child class.")
+        # create a delay
+        if self.animation_delay > 0:
+            self.animation_delay -= GLOBALS.ms_fps
+            return
         if self.__on_pause:
             return
         # first detect if time is out of the duration
