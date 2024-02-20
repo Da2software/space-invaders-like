@@ -53,7 +53,8 @@ class EnemyArmy:
         :return: a {Enemy} class type with all the properties
         """
         enemies_map = {
-            "basic": enemy.EnemyBasic
+            "basic": enemy.EnemyBasic,
+            "shooter": enemy.EnemyShooter
         }
         if enemy_type not in enemies_map:
             return enemy.EnemyBasic(x, y)
@@ -96,10 +97,17 @@ class HiveMind:
             enemy_ref.restore_pos_callback = self.restore_pos_ends
             enemy_ref.attack_end_callback = self.attack_ends
             enemy_ref.on_die_callback = self.on_enemy_dies
+            enemy_ref.on_shoot_callback = self.on_shoot
 
     def get_enemy_list(self):
         """ update enemy list, this variable is used over multiple processes"""
-        self.enemy_list = self.army.enemiesGroup.sprites()
+        base_list = self.army.enemiesGroup.sprites()
+        self.enemy_list = []
+        for item in base_list:
+            # ignore bullets
+            if item.tag == "enemy_bullet":
+                continue
+            self.enemy_list.append(item)
 
     def idle_timer(self):
         """
@@ -112,6 +120,13 @@ class HiveMind:
         for enemy_ref in self.enemy_list:
             if enemy_ref.idle:
                 enemy_ref.timer = self.__global_idle_timer
+
+    def on_shoot(self, enemy_ref: enemy.Enemy):
+        # TODO: add a mechanic to use different bullets base on the enemy type
+        bullet: enemy.Enemy = (
+            enemy.Bullet(enemy_ref.rect.centerx,
+                         enemy_ref.rect.y + enemy_ref.rect.height + 10))
+        self.army.enemiesGroup.add(bullet)
 
     def attack_ends(self, enemy_ref):
         # we are not using this yet
@@ -147,8 +162,11 @@ class HiveMind:
             # check if last one is dead or not to avoid complete this task
             if len(self.enemy_list) == 1 and self.enemy_list[0].is_dead:
                 return
-            chosen_one = random.randint(0, len(self.army.enemiesGroup) - 1)
+            chosen_one = random.randint(0, len(self.enemy_list) - 1)
             if self.enemy_list[chosen_one].on_attack:
+                return
+            if (not self.enemy_list[chosen_one].on_attack
+                    and self.enemy_list[chosen_one].restart_pos):
                 return
             self.execute_attack(self.enemy_list[chosen_one])
             # restore frequency if we reach the limit

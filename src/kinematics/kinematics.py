@@ -378,11 +378,17 @@ class Animator(ABC):
         self.timer = 0
         self.loop = loop
 
+    def on_animation_ends(self, anim_id: str):
+        """ Overload this method in order to do something after an animation
+        ends """
+        pass
+
     def stop_animation(self):
         # then we stop the animation
         self.timer = 0
         self.last_anim = self.current_anim.id if self.current_anim else None
         self.current_anim = None
+        self.on_animation_ends(self.last_anim)
 
     def pause_animation(self):
         self.__on_pause = True

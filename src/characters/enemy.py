@@ -1,5 +1,6 @@
 import pygame
 from src.globals import GameVariables
+from src.kinematics.kinematics import Animation
 from src.utils import Position2D
 from src.kinematics import kinematics
 import random
@@ -51,6 +52,7 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         self.attack_end_callback = None
         self.restore_pos_callback = None
         self.on_die_callback = None
+        self.on_shoot_callback = None
 
     def take_damage(self, damage: int) -> None:
         self.life -= damage
@@ -59,6 +61,21 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
 
     def get_pos(self) -> Position2D:
         return Position2D(self.rect.x, self.rect.y)
+
+    @final
+    def press_trigger(self):
+        """
+        if a child class is using a shoot system we can trigger that using this
+        call, then the HiveMind class can get notified and let this class,
+        creates the shoot
+        """
+        self.__on_shoot()
+
+    @final
+    def __on_shoot(self):
+        """ Execute a callback after shooting a bullet ends"""
+        if self.on_shoot_callback:
+            self.on_shoot_callback(self)
 
     @final
     def __attack_end(self):
@@ -129,6 +146,33 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         return f"({self.tag}, {self.life}, {self.type})"
 
 
+class Bullet(Enemy):
+    def __init__(self, x: int, y: int, size=5):
+        super().__init__(x, y, size)
+        self.speed = 5
+        self.tag = "enemy_bullet"
+        self.damage = 10
+
+        # set rendering
+        self.image = pygame.Surface((5, 8))
+        self.image.fill("green")
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+    def repositioning(self):
+        # avoid inherit process
+        return
+
+    def update(self, player) -> None:
+        # check if enemy is dead
+        if self.is_dead:
+            self.kill()
+        self.rect.move_ip(0, + self.speed)
+        # delete if we get the end of the height screen
+        if self.rect.top > GLOBALS.screen.get_height():
+            self.is_dead = True
+
+
 class EnemyBasic(Enemy):
 
     def __init__(self, x: int, y: int, size=40):
@@ -152,6 +196,62 @@ class EnemyBasic(Enemy):
             self.kill()
             return
         # attack delay
+        if self.on_attack and self.attack_delay > 0:
+            self.attack_delay -= GLOBALS.ms_fps
+            return
+        self.render_animation(self.rect)
+        # other actions/events
+        self.check_limit()
+        if not self.on_attack:
+            self.repositioning()
+
+
+class EnemyShooter(Enemy):
+
+    def __init__(self, x: int, y: int, size=40):
+        super().__init__(x, y, size)
+        self.define_animations("shooter")
+        self.run_animation("idle", True)
+        self.idle = False
+        self.on_shoot = False
+        self.attack_direction = "left"
+        self.delay_attack = False
+        self.shoot_time = 0
+        self.shoot_already = True
+
+    @on_attack
+    def attack(self):
+        self.stop_animation()
+        attack_type = ["left", "right"]
+        self.attack_direction = attack_type[random.randint(0, 1)]
+        self.run_animation(f"jump-{self.attack_direction}")
+        self.idle = False
+
+    def on_animation_ends(self, anim_id: str):
+        if anim_id == f"jump-{self.attack_direction}":
+            self.delay_attack = True
+
+    def update(self, player) -> None:
+        # check if enemy is dead
+        if self.is_dead:
+            self.kill()
+            return
+        # attack delay
+        if self.delay_attack:  # Run once
+            self.delay_attack = False
+            self.run_animation(f"attack-{self.attack_direction}", True)
+            self.on_attack = True
+            self.shoot_already = False
+            self.shoot_time = random.randint(200, 1500)
+
+        if self.shoot_time > 0:
+            self.shoot_time -= GLOBALS.ms_fps
+        elif (self.shoot_time <= 0 and self.on_attack
+              and not self.shoot_already):
+            # shot a bullet
+            self.shoot_already = True
+            self.press_trigger()
+
         if self.on_attack and self.attack_delay > 0:
             self.attack_delay -= GLOBALS.ms_fps
             return

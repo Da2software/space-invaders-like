@@ -1,0 +1,61 @@
+[
+  {
+    "common": "idle"
+  },
+  {
+    "name": "jump-left",
+    "duration": 700,
+    "frames": 17,
+    "key_frames": [
+        { "frame": "5", "x": 0, "y": -20 },
+        { "frame": "6", "x": 2, "y": -4, "curve": "linear" },
+        { "frame": "7", "x": 2, "y": -3, "curve": "linear" },
+        { "frame": "8", "x": 2, "y": -2, "curve": "linear" },
+        { "frame": "9", "x": 2, "y": -1, "curve": "linear" },
+        { "frame": "10", "x": 2, "y": 1, "curve": "linear" },
+        { "frame": "11", "x": 2, "y": 2, "curve": "linear" },
+        { "frame": "12", "x": 2, "y": 3, "curve": "linear" },
+        { "frame": "13", "x": 2, "y": 4, "curve": "linear" },
+        { "frame": "14", "x": -2, "y": 4, "curve": "linear" },
+        { "frame": "15", "x": -2, "y": 3, "curve": "linear" },
+        { "frame": "16", "x": -2, "y": 2, "curve": "linear" },
+        { "frame": "17", "x": -2, "y": 1, "curve": "linear" }
+    ]
+  },
+  {
+    "name": "jump-right",
+    "duration": 700,
+    "frames": 17,
+    "key_frames": [
+        { "frame": "5", "x": 0, "y": -20 },
+        { "frame": "6", "x": -2, "y": -4, "curve": "linear" },
+        { "frame": "7", "x": -2, "y": -3, "curve": "linear" },
+        { "frame": "8", "x": -2, "y": -2, "curve": "linear" },
+        { "frame": "9", "x": -2, "y": -1, "curve": "linear" },
+        { "frame": "10", "x": -2, "y": 1, "curve": "linear" },
+        { "frame": "11", "x": -2, "y": 2, "curve": "linear" },
+        { "frame": "12", "x": -2, "y": 3, "curve": "linear" },
+        { "frame": "13", "x": -2, "y": 4, "curve": "linear" },
+        { "frame": "14", "x": 2, "y": 4, "curve": "linear" },
+        { "frame": "15", "x": 2, "y": 3, "curve": "linear" },
+        { "frame": "16", "x": 2, "y": 2, "curve": "linear" },
+        { "frame": "17", "x": 2, "y": 1, "curve": "linear" }
+    ]
+  },
+  {
+    "name": "attack-left",
+    "duration": 1000,
+    "frames": 60,
+    "key_frames": [
+      { "frame": "60", "x": -200, "y": 200 }
+    ]
+  },
+  {
+    "name": "attack-right",
+    "duration": 1000,
+    "frames": 60,
+    "key_frames": [
+        { "frame": "60", "x": 200, "y": 200 }
+    ]
+  }
+]

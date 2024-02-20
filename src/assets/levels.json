@@ -1,6 +1,6 @@
 {
   "level_1": [
-     [
+    [
       "basic",
       "basic",
       "basic",
@@ -38,10 +38,22 @@
       "basic",
       "basic",
       "basic",
+      "shooter",
+      "shooter",
       "basic",
       "basic",
+      "basic"
+    ]
+  ],
+  "level_4": [
+    [
       "basic",
-      "basic",
+      "shooter",
+      "shooter",
+      "shooter",
+      "shooter",
+      "shooter",
+      "shooter",
       "basic"
     ],
     [
