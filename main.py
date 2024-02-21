@@ -1,5 +1,6 @@
 # Example file showing a circle moving on screen
 import pygame
+import pygame.freetype  # Import the freetype module.
 from src.levelTools import LevelController
 from src.globals import GameVariables
 
@@ -14,6 +15,11 @@ pygame.display.set_icon(gameIcon)
 
 GLOBALS = GameVariables()
 GLOBALS.screen = pygame.display.set_mode((600, 600))
+# define fonts
+font_dir = "src/assets/font.ttf"
+GLOBALS.game_fonts.base = pygame.freetype.Font(font_dir, 16)
+GLOBALS.game_fonts.title = pygame.freetype.Font(font_dir, 24)
+# set clock
 clock = pygame.time.Clock()
 running = True
 

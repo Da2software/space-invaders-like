@@ -1,4 +1,7 @@
 import pygame.display
+from pygame.freetype import Font
+
+
 class SingletonMeta(type):
     """
     Base singleton Class to be used to create the business logic
@@ -13,6 +16,12 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
+class GameFonts:
+    def __init__(self):
+        self.base: Font = None
+        self.title: Font = None
+
+
 class GameVariables(metaclass=SingletonMeta):
     """
     Global variables to be able to access to this any place we need it
@@ -20,6 +29,7 @@ class GameVariables(metaclass=SingletonMeta):
 
     def __init__(self):
         self.screen: pygame.Surface = None
+        self.game_fonts = GameFonts()
         self.delta_time = 0
         self.ms_fps = 16.666666667  # milliseconds peer frame (60 fps)
         self.score = 0

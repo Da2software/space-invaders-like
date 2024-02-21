@@ -2,7 +2,7 @@ from typing import List
 
 from src.globals import GameVariables
 from src.characters import enemy
-from src.characters.player import Player, PlayerController
+from src.characters.player import Player, PlayerController, Bullet
 import pygame
 import json
 import random
@@ -188,6 +188,53 @@ class HiveMind:
         self.frequency_timer += GLOBALS.ms_fps
 
 
+class UIController:
+    def __init__(self):
+        self.txt_score: str = "Score: "
+        self.txt_player_life: str = "Life: "
+        self.txt_level: str = "Leve: "
+        self.txt_game_over: str = "GAME OVER"
+
+    def in_game(self, player):
+        # Level text
+        GLOBALS.game_fonts.base.render_to(GLOBALS.screen, (10, 10),
+                                          self.txt_level + str(GLOBALS.level),
+                                          (255, 255, 255))
+        # score text
+        score, score_rect = GLOBALS.game_fonts.base.render(
+            self.txt_score + str(GLOBALS.score), (255, 255, 255), (0, 0, 0, 0))
+        score_rect.centerx = GLOBALS.screen.get_rect().centerx
+        GLOBALS.screen.blit(score, score_rect)
+        # life text
+        GLOBALS.game_fonts.base.render_to(GLOBALS.screen, (520, 10),
+                                          self.txt_player_life + str(
+                                              player.life),
+                                          (255, 255, 255))
+
+    def game_over(self):
+        screen_center = GLOBALS.screen.get_rect().center
+        # GAME OVER text
+        game_over, game_over_rect = GLOBALS.game_fonts.title.render(
+            self.txt_game_over, (255, 100, 100), (0, 0, 0, 0))
+        game_over_rect.center = screen_center
+        game_over_rect.centery -= 25
+        GLOBALS.screen.blit(game_over, game_over_rect)
+        # score text
+        score, score_rect = GLOBALS.game_fonts.base.render(
+            self.txt_score + str(GLOBALS.score),
+            (200, 200, 190), (0, 0, 0, 0))
+        score_rect.center = screen_center
+        score_rect.centery += 25
+        GLOBALS.screen.blit(score, score_rect)
+
+    def render(self, player_controller: PlayerController):
+        # if level is complete then we can create the new level
+        if player_controller.player.is_dead:
+            self.game_over()
+        else:
+            self.in_game(player_controller.player)
+
+
 class GameLevel:
     """ Creates the level structure according to the level """
 
@@ -221,15 +268,19 @@ class GameLevel:
     def check_collisions(self):
         for enemy_ref in self.enemy_army.enemiesGroup.spritedict:
             enemy_item: enemy.Enemy = enemy_ref
-            for player_or_bullet in self.player_controller.playerGroup.spritedict:
+            for player_ref in self.player_controller.playerGroup.spritedict:
+                player_or_bullet: Player | Bullet = player_ref
                 # check player got hit
                 if player_or_bullet.tag == "player":
                     if player_or_bullet.rect.colliderect(enemy_item.rect):
-                        player_or_bullet.take_damage(enemy_item.damage)
-                        # if hit is enemy_bullet then we need to remove it
-                        if enemy_item.type == 0:
-                            enemy_item.kill()
-                # enemy bullets are type 0
+                        # check invulnerability
+                        if not player_or_bullet.invulnerable:
+                            player_or_bullet.take_damage(enemy_item.damage)
+                            player_or_bullet.active_invulnerability()
+                            # if hit is enemy_bullet then we need to remove it
+                            if enemy_item.type == 0:
+                                enemy_item.kill()
+                # enemy bullets are type 0, that's why type > 0
                 if player_or_bullet.tag == "bullet" and enemy_item.type > 0:
                     if player_or_bullet.rect.colliderect(enemy_item.rect):
                         enemy_item.take_damage(player_or_bullet.damage)
@@ -253,6 +304,7 @@ class LevelController:
         self.__curr_level = 1
         self.__level_list = self.__load_levels_file()
         self.__create_level(self.__curr_level)
+        self.__ui = UIController()
 
     def __create_level(self, level):
         self.__curr_level = level
@@ -264,15 +316,14 @@ class LevelController:
                                       enemies=enemy_set)
 
     def execute(self) -> None:
-        # if level is complete then we can create the new level
+        self.__ui.render(self.__game_level.player_controller)
+        if self.__game_level.is_game_over():
+            return
         if self.__game_level.is_level_completed():
             self.__curr_level += 1
+            GLOBALS.level = self.__curr_level
             self.__create_level(self.__curr_level)
             return
-        if self.__game_level.is_game_over():
-            # do something
-            return
-
         # render level frame
         self.__game_level.render_level_frame()
 

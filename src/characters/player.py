@@ -24,6 +24,8 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.move_f = Position2D()
+        self.invulnerable = False
+        self.invulnerability_timeout = 0  # 2 seconds, but starts with zero
 
     def update(self) -> None:
         """
@@ -38,6 +40,15 @@ class Player(pygame.sprite.Sprite):
             keys) * (self.movex_speed * GLOBALS.delta_time)
 
         self.rect.move_ip(self.move_f.x, self.move_f.y)
+
+        self.invulnerability_timeout -= GLOBALS.ms_fps if (
+                self.invulnerability_timeout > 0) else 0
+        if self.invulnerability_timeout <= 0:
+            self.invulnerable = False
+
+    def active_invulnerability(self):
+        self.invulnerable = True
+        self.invulnerability_timeout = 2000  # 2 seconds
 
     def get_axisY(self, keys) -> int:
         """
