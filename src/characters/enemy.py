@@ -1,7 +1,9 @@
+import math
+
 import pygame
 from src.globals import GameVariables
 from src.kinematics.kinematics import Animation
-from src.utils import Position2D
+from src.utils import *
 from src.kinematics import kinematics
 import random
 import uuid
@@ -13,7 +15,7 @@ GLOBALS = GameVariables()
 @final
 def on_attack(function):
     """ Execute a callback when enemy attacks, this one works as
-     trigger event and decorator"""
+     trigger event and decorator """
 
     def _decorator(self, *args, **kwargs):
         self.on_attack = True
@@ -33,6 +35,7 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         self.type = 1
         self.life = 10
         self.points = 5
+        self.damage = 10
         self.move_speed = 2
         self.is_dead = False
         self.die_animation = 0
@@ -124,14 +127,13 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         if not self.restart_pos:
             return
         # Calculate the distance to move in each frame
-        dx = self.initial_pos[0] - self.rect.x
-        dy = self.initial_pos[1] - self.rect.y
-        distance = pygame.math.Vector2(dx, dy).length()
+        dx, dy, distance = calculate_distance(self.initial_pos,
+                                              (self.rect.x, self.rect.y))
 
         # if distance is greater than the speed, move to start position
         if distance > 1:
-            self.rect.centerx += dx * 0.1
-            self.rect.centery += dy * 0.1
+            self.rect.centerx += dx * 0.05
+            self.rect.centery += dy * 0.05
         # if we get the start position then we can restore the idle state
         gapx = self.rect.width / 2
         gapy = self.rect.height / 2
@@ -146,11 +148,13 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         return f"({self.tag}, {self.life}, {self.type})"
 
 
+# BULLETS TYPE
 class Bullet(Enemy):
     def __init__(self, x: int, y: int, size=5):
         super().__init__(x, y, size)
         self.speed = 5
         self.tag = "enemy_bullet"
+        self.type = 0
         self.damage = 10
 
         # set rendering
@@ -173,12 +177,50 @@ class Bullet(Enemy):
             self.is_dead = True
 
 
+class SniperBullet(Enemy):
+    def __init__(self, x: int, y: int, size=5):
+        super().__init__(x, y, size)
+        self.speed = 5
+        self.tag = "enemy_bullet"
+        self.damage = 20
+        self.type = 0
+
+        # set rendering
+        self.image = pygame.Surface((8, 8))
+        self.image.fill("green")
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.target_on_place = False
+        self.direction_angle = None
+
+    def repositioning(self):
+        # avoid inherit process
+        return
+
+    def update(self, player) -> None:
+        # check if enemy is dead
+        if self.is_dead:
+            self.kill()
+        if not self.target_on_place:  # run once
+            self.direction_angle = get_direction_angle(self.rect.center,
+                                                       player.rect.center)
+            self.target_on_place = True
+        if self.direction_angle is not None:
+            move_to_direction(self.rect, self.direction_angle, self.speed)
+        # delete if we get the end of the height screen
+        if self.rect.top > GLOBALS.screen.get_height():
+            self.is_dead = True
+
+
+# ENEMIES TYPE
 class EnemyBasic(Enemy):
 
     def __init__(self, x: int, y: int, size=40):
         super().__init__(x, y, size)
+        self.type = 1
         self.define_animations("basic")
         self.run_animation("idle", True)
+        self.damage = 10
 
     @on_attack
     def attack(self):
@@ -207,17 +249,20 @@ class EnemyBasic(Enemy):
 
 
 class EnemyShooter(Enemy):
+    """ This enemy can move down to attack player and shoot a the same time"""
 
     def __init__(self, x: int, y: int, size=40):
         super().__init__(x, y, size)
         self.define_animations("shooter")
         self.run_animation("idle", True)
+        self.type = 2
         self.idle = False
         self.on_shoot = False
         self.attack_direction = "left"
         self.delay_attack = False
         self.shoot_time = 0
         self.shoot_already = True
+        self.damage = 20
 
     @on_attack
     def attack(self):
@@ -236,8 +281,8 @@ class EnemyShooter(Enemy):
         if self.is_dead:
             self.kill()
             return
-        # attack delay
-        if self.delay_attack:  # Run once
+        # prepare attack
+        if self.delay_attack and self.shoot_already:  # Run once
             self.delay_attack = False
             self.run_animation(f"attack-{self.attack_direction}", True)
             self.on_attack = True
@@ -260,3 +305,31 @@ class EnemyShooter(Enemy):
         self.check_limit()
         if not self.on_attack:
             self.repositioning()
+
+
+class EnemySniper(Enemy):
+    """ This enemy can shoot a bullet that gets close to the player having more
+    change to do dame but this enemy can not move """
+
+    def __init__(self, x: int, y: int, size=40):
+        super().__init__(x, y, size)
+        self.type = 3
+        self.define_animations("basic")
+        self.run_animation("idle", True)
+        self.idle = True
+        self.shoot_rate = 0
+        self.damage = 25
+
+    def set_shoot_rate(self):
+        self.shoot_rate = random.randint(1500, 3000)
+
+    def update(self, player) -> None:
+        # check if enemy is dead
+        if self.is_dead:
+            self.kill()
+            return
+        self.shoot_rate -= GLOBALS.ms_fps
+        if self.shoot_rate <= 0:
+            self.press_trigger()
+            self.set_shoot_rate()
+        self.render_animation(self.rect)

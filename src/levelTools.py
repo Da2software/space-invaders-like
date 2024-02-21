@@ -54,7 +54,8 @@ class EnemyArmy:
         """
         enemies_map = {
             "basic": enemy.EnemyBasic,
-            "shooter": enemy.EnemyShooter
+            "shooter": enemy.EnemyShooter,
+            "sniper": enemy.EnemySniper
         }
         if enemy_type not in enemies_map:
             return enemy.EnemyBasic(x, y)
@@ -88,9 +89,17 @@ class HiveMind:
     def setup(self):
         """ Analyze the current army and creates a patter attack """
 
-        if 2 < self.level <= 4:
-            self.frequency = 1500
+        if 2 < self.level < 5:
+            self.frequency = 1750
             self.limit_on_attack = 2
+
+        if 4 < self.level < 7:
+            self.frequency = 1500
+            self.limit_on_attack = 4
+
+        if 6 < self.level <= 10:
+            self.frequency = 1000
+            self.limit_on_attack = 6
 
         for enemy_ref in self.enemy_list:
             enemy_ref.run_animation("idle", True)
@@ -122,10 +131,14 @@ class HiveMind:
                 enemy_ref.timer = self.__global_idle_timer
 
     def on_shoot(self, enemy_ref: enemy.Enemy):
-        # TODO: add a mechanic to use different bullets base on the enemy type
-        bullet: enemy.Enemy = (
-            enemy.Bullet(enemy_ref.rect.centerx,
-                         enemy_ref.rect.y + enemy_ref.rect.height + 10))
+        bullet: enemy.Enemy | None = None
+        match enemy_ref.type:
+            case 2:
+                bullet = enemy.Bullet(enemy_ref.rect.centerx,
+                                      enemy_ref.rect.y + enemy_ref.rect.height + 10)
+            case 3:
+                bullet = enemy.SniperBullet(enemy_ref.rect.centerx,
+                                            enemy_ref.rect.y + enemy_ref.rect.height + 10)
         self.army.enemiesGroup.add(bullet)
 
     def attack_ends(self, enemy_ref):
@@ -205,17 +218,26 @@ class GameLevel:
             return True
         return False
 
-    def check_bullet_hit(self):
-        for enemy_item in self.enemy_army.enemiesGroup.spritedict:
-            for bullet in self.player_controller.playerGroup.spritedict:
-                if bullet.tag == "bullet":
-                    if bullet.rect.colliderect(enemy_item.rect):
-                        enemy_item.take_damage(bullet.damage)
-                        bullet.hit()
+    def check_collisions(self):
+        for enemy_ref in self.enemy_army.enemiesGroup.spritedict:
+            enemy_item: enemy.Enemy = enemy_ref
+            for player_or_bullet in self.player_controller.playerGroup.spritedict:
+                # check player got hit
+                if player_or_bullet.tag == "player":
+                    if player_or_bullet.rect.colliderect(enemy_item.rect):
+                        player_or_bullet.take_damage(enemy_item.damage)
+                        # if hit is enemy_bullet then we need to remove it
+                        if enemy_item.type == 0:
+                            enemy_item.kill()
+                # enemy bullets are type 0
+                if player_or_bullet.tag == "bullet" and enemy_item.type > 0:
+                    if player_or_bullet.rect.colliderect(enemy_item.rect):
+                        enemy_item.take_damage(player_or_bullet.damage)
+                        player_or_bullet.hit()
 
     def render_level_frame(self):
         self.player_controller.render()
-        self.check_bullet_hit()
+        self.check_collisions()
         self.enemy_army.enemiesGroup.update(self.player_controller.player)
         self.enemy_controller.update()
         self.enemy_army.enemiesGroup.draw(GLOBALS.screen)
@@ -230,7 +252,7 @@ class LevelController:
         self.__game_level = GameLevel()
         self.__curr_level = 1
         self.__level_list = self.__load_levels_file()
-        self.__create_level(1)
+        self.__create_level(self.__curr_level)
 
     def __create_level(self, level):
         self.__curr_level = level
@@ -238,7 +260,8 @@ class LevelController:
         if next_level not in self.__level_list:
             return
         enemy_set = self.__level_list[next_level]
-        self.__game_level.build_level(level=1, enemies=enemy_set)
+        self.__game_level.build_level(level=self.__curr_level,
+                                      enemies=enemy_set)
 
     def execute(self) -> None:
         # if level is complete then we can create the new level
