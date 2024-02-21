@@ -16,11 +16,13 @@ class Player(pygame.sprite.Sprite):
         self.tag = "player"
         self.movex_speed = 400
         self.movey_speed = 400
-        self.life = 100
+        # self.life = GLOBALS.life
         self.is_dead = False
         # player rendering
-        self.image = pygame.Surface((40, 40))
-        self.image.fill(col)
+        self.image = pygame.image.load(
+            GLOBALS.sprite_dir + "Player.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (48, 48))
+        # self.image.fill(col)
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.move_f = Position2D()
@@ -90,8 +92,8 @@ class Player(pygame.sprite.Sprite):
         return pos
 
     def take_damage(self, damage: int):
-        self.life -= damage
-        self.is_dead = self.life <= 0
+        GLOBALS.life -= damage
+        self.is_dead = GLOBALS.life <= 0
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -103,8 +105,8 @@ class Bullet(pygame.sprite.Sprite):
         self.speed = 10
         self.is_dead = False  # in case bullet hits an Enemy
         # Rendering Variables
-        self.image = pygame.Surface((5, 8))
-        self.image.fill("cyan")
+        self.image = pygame.Surface((6, 10))
+        self.image.fill((255, 240, 100))
         self.rect = self.image.get_rect()
         player_pos = player.get_pos()
         self.rect.center = (

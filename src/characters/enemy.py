@@ -42,8 +42,9 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         self.attack_delay = 0
 
         # Rendering Variables
-        self.image = pygame.Surface((size, size))
-        self.image.fill("red")
+        self.image = pygame.image.load(
+            GLOBALS.sprite_dir + "EnemyBasic.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (48, 48))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.initial_pos = (x, y)
@@ -264,6 +265,13 @@ class EnemyShooter(Enemy):
         self.shoot_already = True
         self.damage = 20
 
+        # Rendering Variables
+        self.image = pygame.image.load(
+            GLOBALS.sprite_dir + "Shooter.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (48, 48))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
     @on_attack
     def attack(self):
         self.stop_animation()
@@ -319,6 +327,13 @@ class EnemySniper(Enemy):
         self.idle = True
         self.shoot_rate = 0
         self.damage = 25
+
+        # Rendering Variables
+        self.image = pygame.image.load(
+            GLOBALS.sprite_dir + "Sniper.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (48, 48))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
 
     def set_shoot_rate(self):
         self.shoot_rate = random.randint(1500, 3000)

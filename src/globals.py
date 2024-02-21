@@ -30,7 +30,10 @@ class GameVariables(metaclass=SingletonMeta):
     def __init__(self):
         self.screen: pygame.Surface = None
         self.game_fonts = GameFonts()
+        self.sprite_dir = "src/assets/sprites/"
         self.delta_time = 0
         self.ms_fps = 16.666666667  # milliseconds peer frame (60 fps)
         self.score = 0
         self.level = 1
+        # life do not reset after changing levels, more difficulty added XD
+        self.life = 100

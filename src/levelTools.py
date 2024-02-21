@@ -208,7 +208,7 @@ class UIController:
         # life text
         GLOBALS.game_fonts.base.render_to(GLOBALS.screen, (520, 10),
                                           self.txt_player_life + str(
-                                              player.life),
+                                              GLOBALS.life),
                                           (255, 255, 255))
 
     def game_over(self):
@@ -219,9 +219,9 @@ class UIController:
         game_over_rect.center = screen_center
         game_over_rect.centery -= 25
         GLOBALS.screen.blit(game_over, game_over_rect)
-        # score text
+        # score text, in this case we add the life as score
         score, score_rect = GLOBALS.game_fonts.base.render(
-            self.txt_score + str(GLOBALS.score),
+            self.txt_score + str(GLOBALS.score + GLOBALS.life),
             (200, 200, 190), (0, 0, 0, 0))
         score_rect.center = screen_center
         score_rect.centery += 25
@@ -261,7 +261,7 @@ class GameLevel:
     def is_game_over(self) -> bool:
         """Check if player is dead
                :returns: boolean"""
-        if self.player_controller.player.life == 0:
+        if GLOBALS.life == 0:
             return True
         return False
 
@@ -279,7 +279,7 @@ class GameLevel:
                             player_or_bullet.active_invulnerability()
                             # if hit is enemy_bullet then we need to remove it
                             if enemy_item.type == 0:
-                                enemy_item.kill()
+                                enemy_item.is_dead = True
                 # enemy bullets are type 0, that's why type > 0
                 if player_or_bullet.tag == "bullet" and enemy_item.type > 0:
                     if player_or_bullet.rect.colliderect(enemy_item.rect):
