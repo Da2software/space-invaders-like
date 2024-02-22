@@ -8,6 +8,8 @@ import pygame
 import json
 import random
 
+from src.hit_particles import HitExplosionController
+
 GLOBALS = GameVariables()
 
 
@@ -33,11 +35,15 @@ class EnemyArmy:
         gap = gap
         enemy_size = enemy_size
         for row in self.pattern:
+            if len(row) == 0 or len(row) > 8:
+                raise Exception(
+                    "Enemy rows need to be min 1 or max 8 elements")
             for e_type in row:
-                # add enemy position with the gap to the left
-                new_enemy = self.build_enemy(e_type, x_delta + gap,
-                                             y_delta + gap)
-                self.enemiesGroup.add(new_enemy)
+                if e_type:
+                    # add enemy position with the gap to the left
+                    new_enemy = self.build_enemy(e_type, x_delta + gap,
+                                                 y_delta + gap)
+                    self.enemiesGroup.add(new_enemy)
                 # add the gap to the right
                 x_delta += enemy_size + gap
             y_delta += enemy_size + gap
@@ -265,6 +271,7 @@ class GameLevel:
         self.player_controller: PlayerController = None
         self.enemy_controller: HiveMind = None
         self.background = SpaceBackground()
+        self.hit_controller = HitExplosionController()
 
     def build_level(self, level, enemies):
         """Creates the level structure"""
@@ -299,12 +306,18 @@ class GameLevel:
                         if not player_or_bullet.invulnerable:
                             player_or_bullet.take_damage(enemy_item.damage)
                             player_or_bullet.active_invulnerability()
+                            # render hit
+                            self.hit_controller.add_hit_explosion(
+                                player_or_bullet.rect.center)
                             # if hit is enemy_bullet then we need to remove it
                             if enemy_item.type == 0:
                                 enemy_item.is_dead = True
                 # enemy bullets are type 0, that's why type > 0
                 if player_or_bullet.tag == "bullet" and enemy_item.type > 0:
                     if player_or_bullet.rect.colliderect(enemy_item.rect):
+                        # render hit
+                        self.hit_controller.add_hit_explosion(
+                            enemy_item.rect.center)
                         enemy_item.take_damage(player_or_bullet.damage)
                         player_or_bullet.hit()
 
@@ -315,6 +328,7 @@ class GameLevel:
         self.enemy_army.enemiesGroup.update(self.player_controller.player)
         self.enemy_controller.update()
         self.enemy_army.enemiesGroup.draw(GLOBALS.screen)
+        self.hit_controller.render()
 
     def __str__(self):
         return (f"(level: {self.level}, enemies: {self.enemy_army}, "

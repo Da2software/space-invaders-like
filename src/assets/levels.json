@@ -37,10 +37,10 @@
     [
       "basic",
       "basic",
-      "basic",
       "shooter",
       "shooter",
-      "basic",
+      "shooter",
+      "shooter",
       "basic",
       "basic"
     ],
@@ -48,11 +48,21 @@
       "basic",
       "basic",
       "basic",
-      "shooter",
-      "shooter",
+      "basic",
+      "basic",
       "basic",
       "basic",
       "basic"
+    ],
+    [
+      null,
+      null,
+      "basic",
+      "basic",
+      "basic",
+      "basic",
+      null,
+      null
     ]
   ],
   "level_4": [

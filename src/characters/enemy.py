@@ -327,6 +327,8 @@ class EnemySniper(Enemy):
         self.idle = True
         self.shoot_rate = 0
         self.damage = 25
+        # wai fist before first shoot
+        self.delay_scope = 1500
 
         # Rendering Variables
         self.image = pygame.image.load(
@@ -344,7 +346,9 @@ class EnemySniper(Enemy):
             self.kill()
             return
         self.shoot_rate -= GLOBALS.ms_fps
-        if self.shoot_rate <= 0:
+        if self.delay_scope > 0:
+            self.delay_scope -= GLOBALS.ms_fps
+        if self.shoot_rate <= 0 and self.delay_scope <= 0:
             self.press_trigger()
             self.set_shoot_rate()
         self.render_animation(self.rect)
