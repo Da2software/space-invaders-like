@@ -1,3 +1,4 @@
+import math
 from typing import List
 
 from src.globals import GameVariables
@@ -235,6 +236,26 @@ class UIController:
             self.in_game(player_controller.player)
 
 
+class SpaceBackground:
+    """ this creates a background animated with start and planets """
+
+    def __init__(self, speed=1):
+        self.img_height = 1200
+        self.bg = pygame.image.load(GLOBALS.sprite_dir + "bg.png").convert()
+        self.bg.set_alpha(180)
+        self.tiles = math.ceil(self.img_height / self.bg.get_height()) + 1
+        self.scroll = 0
+        self.speed = speed
+
+    def render(self):
+        for i in range(0, self.tiles):
+            GLOBALS.screen.blit(self.bg, (0, self.bg.get_height() * i
+                                          + self.scroll))
+        self.scroll -= self.speed
+        if abs(self.scroll) > self.img_height:
+            self.scroll = 0
+
+
 class GameLevel:
     """ Creates the level structure according to the level """
 
@@ -243,6 +264,7 @@ class GameLevel:
         self.enemy_army: EnemyArmy = None
         self.player_controller: PlayerController = None
         self.enemy_controller: HiveMind = None
+        self.background = SpaceBackground()
 
     def build_level(self, level, enemies):
         """Creates the level structure"""
@@ -287,6 +309,7 @@ class GameLevel:
                         player_or_bullet.hit()
 
     def render_level_frame(self):
+        self.background.render()
         self.player_controller.render()
         self.check_collisions()
         self.enemy_army.enemiesGroup.update(self.player_controller.player)
@@ -316,16 +339,16 @@ class LevelController:
                                       enemies=enemy_set)
 
     def execute(self) -> None:
+        if not self.__game_level.is_game_over():
+            if self.__game_level.is_level_completed():
+                self.__curr_level += 1
+                GLOBALS.level = self.__curr_level
+                self.__create_level(self.__curr_level)
+                return
+            # render level frame
+            self.__game_level.render_level_frame()
+        # render ui
         self.__ui.render(self.__game_level.player_controller)
-        if self.__game_level.is_game_over():
-            return
-        if self.__game_level.is_level_completed():
-            self.__curr_level += 1
-            GLOBALS.level = self.__curr_level
-            self.__create_level(self.__curr_level)
-            return
-        # render level frame
-        self.__game_level.render_level_frame()
 
     @staticmethod
     def __load_levels_file():

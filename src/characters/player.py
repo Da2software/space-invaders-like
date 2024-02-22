@@ -27,7 +27,28 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (x, y)
         self.move_f = Position2D()
         self.invulnerable = False
+        self.blink_alpha_timer = 100
+        self.blink_alpha = 200
+        self.blink_state = False
         self.invulnerability_timeout = 0  # 2 seconds, but starts with zero
+
+    def blink(self):
+        """ used to generate the blink state when player got damage """
+        # start if invulnerability is active
+        if self.invulnerable and self.blink_alpha_timer <= 0:
+            # alpha change between two values 50|180 each timer period
+            self.blink_alpha = 180 if self.blink_state else 50
+            # set the new alpha
+            self.image.set_alpha(self.blink_alpha)
+            # this value helps switch the alpha value
+            self.blink_state = not self.blink_state # invert the current value
+            # set again the timer
+            self.blink_alpha_timer = 100
+        if self.invulnerable:  # timer works if is invulnerable
+            self.blink_alpha_timer -= GLOBALS.ms_fps
+        elif self.image.get_alpha() != 255:
+            # in case the blink ends then restore the alpha
+            self.image.set_alpha(255)
 
     def update(self) -> None:
         """
@@ -47,6 +68,7 @@ class Player(pygame.sprite.Sprite):
                 self.invulnerability_timeout > 0) else 0
         if self.invulnerability_timeout <= 0:
             self.invulnerable = False
+        self.blink()
 
     def active_invulnerability(self):
         self.invulnerable = True
@@ -106,7 +128,7 @@ class Bullet(pygame.sprite.Sprite):
         self.is_dead = False  # in case bullet hits an Enemy
         # Rendering Variables
         self.image = pygame.Surface((6, 10))
-        self.image.fill((255, 240, 100))
+        self.image.fill((255, 255, 0))
         self.rect = self.image.get_rect()
         player_pos = player.get_pos()
         self.rect.center = (
