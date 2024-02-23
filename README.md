@@ -3,6 +3,7 @@
 pygame project from scratch, this is a challenge focus on use my current
 skills, this doesn't use tutorials that are based on existing "space invaders"
 projects, just learning how to use pygame and work with that.
+<img height="600" src="./src/assets/gameplay.png" title="gameplay screenshoot" width="600"/>
 
 ### requirements
 

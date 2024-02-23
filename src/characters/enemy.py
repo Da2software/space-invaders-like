@@ -163,6 +163,8 @@ class Bullet(Enemy):
         self.image.fill("green")
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        # PLay sound effect each time a bullet is created
+        GLOBALS.sound_controller.play("s3")
 
     def repositioning(self):
         # avoid inherit process
@@ -193,6 +195,8 @@ class SniperBullet(Enemy):
         self.rect.center = (x, y)
         self.target_on_place = False
         self.direction_angle = None
+        # PLay sound effect each time a bullet is created
+        GLOBALS.sound_controller.play("s2")
 
     def repositioning(self):
         # avoid inherit process
@@ -222,6 +226,7 @@ class EnemyBasic(Enemy):
         self.define_animations("basic")
         self.run_animation("idle", True)
         self.damage = 10
+        self.sound_active = False
 
     @on_attack
     def attack(self):
@@ -229,6 +234,9 @@ class EnemyBasic(Enemy):
         attack_anims = ["zigzag", "zigzag",
                         "kamikaze-left", "kamikaze-right"]
         animation_id = attack_anims[random.randint(0, 3)]
+        if not self.sound_active:
+            GLOBALS.sound_controller.play("fall")
+            self.sound_active = True
         self.run_animation(animation_id, True)
         self.idle = False
         self.on_attack = True
@@ -247,6 +255,7 @@ class EnemyBasic(Enemy):
         self.check_limit()
         if not self.on_attack:
             self.repositioning()
+            self.sound_active = False
 
 
 class EnemyShooter(Enemy):
@@ -264,6 +273,7 @@ class EnemyShooter(Enemy):
         self.shoot_time = 0
         self.shoot_already = True
         self.damage = 20
+        self.life = 20
 
         # Rendering Variables
         self.image = pygame.image.load(
@@ -271,6 +281,7 @@ class EnemyShooter(Enemy):
         self.image = pygame.transform.scale(self.image, (48, 48))
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        self.sound_active = False
 
     @on_attack
     def attack(self):
@@ -278,6 +289,9 @@ class EnemyShooter(Enemy):
         attack_type = ["left", "right"]
         self.attack_direction = attack_type[random.randint(0, 1)]
         self.run_animation(f"jump-{self.attack_direction}")
+        if not self.sound_active:
+            GLOBALS.sound_controller.play("fall")
+            self.sound_active = True
         self.idle = False
 
     def on_animation_ends(self, anim_id: str):
@@ -313,6 +327,7 @@ class EnemyShooter(Enemy):
         self.check_limit()
         if not self.on_attack:
             self.repositioning()
+            self.sound_active = False
 
 
 class EnemySniper(Enemy):
@@ -329,6 +344,7 @@ class EnemySniper(Enemy):
         self.damage = 25
         # wai fist before first shoot
         self.delay_scope = 1500
+        self.life = 25
 
         # Rendering Variables
         self.image = pygame.image.load(

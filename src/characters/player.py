@@ -1,4 +1,5 @@
 import pygame
+import pygame.mixer
 from src.globals import GameVariables
 from src.utils import Position2D
 
@@ -41,7 +42,7 @@ class Player(pygame.sprite.Sprite):
             # set the new alpha
             self.image.set_alpha(self.blink_alpha)
             # this value helps switch the alpha value
-            self.blink_state = not self.blink_state # invert the current value
+            self.blink_state = not self.blink_state  # invert the current value
             # set again the timer
             self.blink_alpha_timer = 100
         if self.invulnerable:  # timer works if is invulnerable
@@ -116,6 +117,8 @@ class Player(pygame.sprite.Sprite):
     def take_damage(self, damage: int):
         GLOBALS.life -= damage
         self.is_dead = GLOBALS.life <= 0
+        # sound effect for damage
+        GLOBALS.sound_controller.play("dmg")
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -124,7 +127,7 @@ class Bullet(pygame.sprite.Sprite):
         # Bullet attributes
         self.tag = "bullet"
         self.damage = 10
-        self.speed = 10
+        self.speed = 8
         self.is_dead = False  # in case bullet hits an Enemy
         # Rendering Variables
         self.image = pygame.Surface((6, 10))
@@ -133,6 +136,9 @@ class Bullet(pygame.sprite.Sprite):
         player_pos = player.get_pos()
         self.rect.center = (
             player_pos.x + (player.rect.width / 2), player_pos.y)
+
+        # if bullet is created we need a sound effect for shoot
+        GLOBALS.sound_controller.play("s1")  # shoot1
 
     def update(self) -> None:
         # check if bullet got hit
@@ -160,11 +166,21 @@ class PlayerController:
         self.shoot_rate = 0.6
         self.shoot_timer = 0.6
 
+    def can_shot(self):
+        """ Can not shoot more than one bullet, we need to wait until
+        the next bullet is destroyed
+        :return True or False if we can shoot or not """
+        for item in self.playerGroup.sprites():
+            player_or_bullet: Player | Bullet = item
+            if player_or_bullet.tag == "bullet":
+                return False
+        return True
+
     def render(self):
         keys = pygame.key.get_pressed()
         # detect player shoot
         self.shoot_timer -= GLOBALS.delta_time
-        if keys[pygame.K_SPACE] and self.shoot_timer <= 0:
+        if keys[pygame.K_SPACE] and self.shoot_timer <= 0 and self.can_shot():
             bullet = Bullet(self.player)
             self.playerGroup.add(bullet)
             self.shoot_timer = self.shoot_rate

@@ -85,6 +85,16 @@
       "basic",
       "basic",
       "basic"
+    ],
+     [
+      null,
+      null,
+      "basic",
+      "basic",
+      "basic",
+      "basic",
+      null,
+      null
     ]
   ],
   "level_5": [
@@ -107,6 +117,16 @@
       "shooter",
       "shooter",
       "basic"
+    ],
+     [
+      null,
+      null,
+      "shooter",
+      "basic",
+      "basic",
+      "shooter",
+      null,
+      null
     ]
   ],
   "level_6": [

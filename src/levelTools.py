@@ -43,6 +43,8 @@ class EnemyArmy:
                     # add enemy position with the gap to the left
                     new_enemy = self.build_enemy(e_type, x_delta + gap,
                                                  y_delta + gap)
+                    new_enemy.life += round(
+                        GLOBALS.level * 0.1) * new_enemy.life
                     self.enemiesGroup.add(new_enemy)
                 # add the gap to the right
                 x_delta += enemy_size + gap
@@ -284,13 +286,15 @@ class GameLevel:
         """Check if level is complete
         :returns: boolean"""
         if len(self.enemy_army.enemiesGroup) == 0:
+            GLOBALS.sound_controller.stop()
             return True
         return False
 
     def is_game_over(self) -> bool:
         """Check if player is dead
                :returns: boolean"""
-        if GLOBALS.life == 0:
+        if GLOBALS.life <= 0:
+            GLOBALS.sound_controller.stop()
             return True
         return False
 
@@ -308,7 +312,8 @@ class GameLevel:
                             player_or_bullet.active_invulnerability()
                             # render hit
                             self.hit_controller.add_hit_explosion(
-                                player_or_bullet.rect.center)
+                                player_or_bullet.rect.center,
+                                sound_effect=False)
                             # if hit is enemy_bullet then we need to remove it
                             if enemy_item.type == 0:
                                 enemy_item.is_dead = True
@@ -318,6 +323,7 @@ class GameLevel:
                         # render hit
                         self.hit_controller.add_hit_explosion(
                             enemy_item.rect.center)
+
                         enemy_item.take_damage(player_or_bullet.damage)
                         player_or_bullet.hit()
 
