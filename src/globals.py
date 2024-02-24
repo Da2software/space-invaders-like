@@ -42,6 +42,8 @@ class GameVariables(metaclass=SingletonMeta):
         self.level = 1
         # life do not reset after changing levels, more difficulty added XD
         self.life = 100
+        # if this is true, on the text frame we will validate this an run a restar
+        self.restart = False
 
     def create_sound_library(self):
         self.sound_controller.add_sound("s1", "shoot1.wav")
@@ -50,4 +52,3 @@ class GameVariables(metaclass=SingletonMeta):
         self.sound_controller.add_sound("fall", "fall.wav")
         self.sound_controller.add_sound("dmg", "damage.wav")
         self.sound_controller.add_sound("exp", "explosion.wav")
-

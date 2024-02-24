@@ -203,6 +203,9 @@ class UIController:
         self.txt_player_life: str = "Life: "
         self.txt_level: str = "Leve: "
         self.txt_game_over: str = "GAME OVER"
+        self.txt_restart: str = "press SPACE to restart"
+        self.__blink_restart = False
+        self.__blink_timer = 500
 
     def in_game(self, player):
         # Level text
@@ -226,15 +229,32 @@ class UIController:
         game_over, game_over_rect = GLOBALS.game_fonts.title.render(
             self.txt_game_over, (255, 100, 100), (0, 0, 0, 0))
         game_over_rect.center = screen_center
-        game_over_rect.centery -= 25
+        game_over_rect.centery -= 10
         GLOBALS.screen.blit(game_over, game_over_rect)
         # score text, in this case we add the life as score
         score, score_rect = GLOBALS.game_fonts.base.render(
             self.txt_score + str(GLOBALS.score + GLOBALS.life),
             (200, 200, 190), (0, 0, 0, 0))
         score_rect.center = screen_center
-        score_rect.centery += 25
+        score_rect.centery += 10
         GLOBALS.screen.blit(score, score_rect)
+        # restart label
+        restart, restart_rect = GLOBALS.game_fonts.base.render(
+            self.txt_restart,
+            (255, 255, 255, 255 if self.__blink_restart else 200),
+            (0, 0, 0, 0))
+        restart_rect.center = screen_center
+        restart_rect.centery += 100
+        GLOBALS.screen.blit(restart, restart_rect)
+        self.__blink_timer -= GLOBALS.ms_fps
+        if self.__blink_timer <= 0:
+            self.__blink_restart = not self.__blink_restart
+            self.__blink_timer = 500
+
+        # Enter Key press detector
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            GLOBALS.restart = True
 
     def render(self, player_controller: PlayerController):
         # if level is complete then we can create the new level
@@ -349,6 +369,13 @@ class LevelController:
         self.__create_level(self.__curr_level)
         self.__ui = UIController()
 
+    def __restart(self):
+        GLOBALS.restart = False
+        GLOBALS.level = 1
+        GLOBALS.life = 100
+        GLOBALS.score = 0
+        self.__init__()
+
     def __create_level(self, level):
         self.__curr_level = level
         next_level = f"level_{self.__curr_level}"
@@ -359,6 +386,9 @@ class LevelController:
                                       enemies=enemy_set)
 
     def execute(self) -> None:
+        if GLOBALS.restart:
+            self.__restart()
+            return
         if not self.__game_level.is_game_over():
             if self.__game_level.is_level_completed():
                 self.__curr_level += 1

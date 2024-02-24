@@ -86,7 +86,7 @@
       "basic",
       "basic"
     ],
-     [
+    [
       null,
       null,
       "basic",
@@ -118,7 +118,7 @@
       "shooter",
       "basic"
     ],
-     [
+    [
       null,
       null,
       "shooter",
@@ -151,14 +151,14 @@
       "basic"
     ],
     [
+      null,
       "basic",
       "basic",
       "basic",
       "basic",
       "basic",
       "basic",
-      "basic",
-      "basic"
+      null
     ]
   ],
   "level_7": [
@@ -257,14 +257,14 @@
       "basic"
     ],
     [
+      null,
+      null,
       "basic",
       "basic",
       "basic",
       "basic",
-      "basic",
-      "basic",
-      "basic",
-      "basic"
+      null,
+      null
     ]
   ]
 }
