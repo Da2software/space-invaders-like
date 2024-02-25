@@ -1,8 +1,4 @@
-import math
-
-import pygame
 from src.globals import GameVariables
-from src.kinematics.kinematics import Animation
 from src.utils import *
 from src.kinematics import kinematics
 import random
@@ -34,6 +30,8 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         self.army_id = uuid.uuid4()
         self.type = 1
         self.life = 10
+        self.init_life = None
+        self.life_bar_timer = 0
         self.points = 5
         self.damage = 10
         self.move_speed = 2
@@ -58,7 +56,36 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         self.on_die_callback = None
         self.on_shoot_callback = None
 
+    def draw_health_bar(self):
+        # avoid this if we don't have a first hit or the timer is ended
+        if not self.init_life or self.life_bar_timer <= 0:
+            return
+        life_color = (128, 255, 0)
+        life_bar_length = self.rect.width - 8  # with padding
+        remaining_life = self.life / self.init_life
+        # set the color of the life base
+        if remaining_life > 0.75:
+            life_color = (128, 255, 0)  # green color
+        elif 0.5 < remaining_life <= 0.75:
+            life_color = (255, 220, 0)  # yellow color
+        elif 0.25 < remaining_life <= 0.5:
+            life_color = (255, 128, 0)  # orange
+        elif remaining_life <= 0.25:
+            life_color = (255, 0, 0)  # red
+        pygame.draw.rect(GLOBALS.screen, (255, 255, 255), (
+            self.rect.x + 2, self.rect.y - 11, life_bar_length +2, 6))
+        pygame.draw.rect(GLOBALS.screen, life_color, (
+            self.rect.x + 4, self.rect.y - 10,
+            life_bar_length * remaining_life,
+            4))
+        self.life_bar_timer -= GLOBALS.ms_fps
+
     def take_damage(self, damage: int) -> None:
+        # automatically get original life value
+        if not self.init_life:
+            self.init_life = self.life
+        self.life_bar_timer = 3000
+        # then subtract the damage
         self.life -= damage
         if self.life <= 0:
             self.__on_die()
@@ -80,6 +107,12 @@ class Enemy(pygame.sprite.Sprite, kinematics.Animator):
         """ Execute a callback after shooting a bullet ends"""
         if self.on_shoot_callback:
             self.on_shoot_callback(self)
+
+    @final
+    def __on_take_damage(self):
+        """ Execute a callback after take damage """
+        if self.on_damage_callback:
+            self.on_damage_callback(self)
 
     @final
     def __attack_end(self):
@@ -251,6 +284,8 @@ class EnemyBasic(Enemy):
             self.attack_delay -= GLOBALS.ms_fps
             return
         self.render_animation(self.rect)
+        # draw life bar
+        self.draw_health_bar()
         # other actions/events
         self.check_limit()
         if not self.on_attack:
@@ -323,6 +358,8 @@ class EnemyShooter(Enemy):
             self.attack_delay -= GLOBALS.ms_fps
             return
         self.render_animation(self.rect)
+        # draw life bar
+        self.draw_health_bar()
         # other actions/events
         self.check_limit()
         if not self.on_attack:
@@ -368,3 +405,53 @@ class EnemySniper(Enemy):
             self.press_trigger()
             self.set_shoot_rate()
         self.render_animation(self.rect)
+        # draw life bar
+        self.draw_health_bar()
+
+
+# UI life bar
+class EnemyLifeBar(pygame.sprite.Sprite):
+    def __init__(self, enemy_ref: Enemy):
+        pygame.sprite.Sprite.__init__(self)
+        self.life_size = 40
+        self.tag = "enemy_life"
+        # Rendering Variables
+        self.image = pygame.Surface((self.life_size, 5))
+        # set a green color but on 0 opacity
+        self.image.fill((50, 180, 50))
+        self.image.set_alpha(0)
+        self.rect = self.image.get_rect()
+        self.__enemy_ref: Enemy = enemy_ref
+        self.__enemy_ref.on_damage_callback = self.show_life
+        self.__init_life = self.__enemy_ref.life
+        self.__visible_timer = 0  # we just show the bar a couple of minutes
+
+    def show_life(self):
+        """
+        Used to show the new life value, in most of the time
+         after a bullet hit
+        """
+        # each lifebar needs an enemy, if enemy is dead life bar disappear
+        if self.__enemy_ref:
+            self.image.set_alpha(255)
+            self.__visible_timer = 3000  # 3 seconds visibility
+            # set new size of the life bar
+            new_width = self.__enemy_ref.life / self.__init_life
+            self.image = pygame.transform.scale(self.image,
+                                                (new_width * self.life_size,
+                                                 self.rect.height))
+            self.rect = self.image.get_rect()
+        else:
+            self.kill()
+
+    def update(self) -> None:
+        if not self.__enemy_ref or self.__enemy_ref.is_dead:
+            self.kill()
+            return
+        alpha = self.image.get_alpha()
+        if self.__visible_timer > 0:
+            self.rect.x = self.__enemy_ref.rect.x + 4
+            self.rect.y = self.__enemy_ref.rect.y - 10
+            self.__visible_timer -= GLOBALS.ms_fps
+        if self.__visible_timer <= 0 and alpha == 255:
+            self.image.set_alpha(0)

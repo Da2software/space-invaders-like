@@ -1,5 +1,16 @@
 import unittest
+
+import pygame
+
 from src.levelTools import EnemyArmy
+
+# TODO: put this in a common file for testing, for some reason windows version
+#  requires to load pygame init and other kind of things
+# pygame setup
+pygame.init()
+# set caption
+pygame.display.set_caption("Da2 Space invaders")
+pygame.display.set_mode((600, 600))
 
 
 class TestLevelTools(unittest.TestCase):

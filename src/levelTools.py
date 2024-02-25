@@ -16,10 +16,12 @@ GLOBALS = GameVariables()
 class EnemyArmy:
     """Factory class to generate a Enemies group placed over the level"""
 
-    def __init__(self, level=1, pattern=[[]]):
+    def __init__(self, level=1, pattern=[[]], life_config={}):
         self.level = level
         self.pattern = pattern
+        self.life_config = life_config
         self.enemiesGroup: pygame.sprite.Group = None
+        self.lifeBarGroup: pygame.sprite.Group = None
         self.__create()
 
     def __create(self, w_margin=45, h_margin=45, gap=25,
@@ -29,7 +31,8 @@ class EnemyArmy:
         we will take 20 and 20 px from left to right and then each enemy takes
         56px per col and row, each enemy has a 8px margin/gap
         """
-        self.enemiesGroup = pygame.sprite.Group()  # restart the group
+        # restart groups
+        self.enemiesGroup = pygame.sprite.Group()
         x_delta = w_margin
         y_delta = h_margin
         gap = gap
@@ -41,8 +44,12 @@ class EnemyArmy:
             for e_type in row:
                 if e_type:
                     # add enemy position with the gap to the left
-                    new_enemy = self.build_enemy(e_type, x_delta + gap,
-                                                 y_delta + gap)
+                    new_enemy: enemy.Enemy = self.build_enemy(e_type,
+                                                              x_delta + gap,
+                                                              y_delta + gap)
+                    if e_type in self.life_config:
+                        new_enemy.life = self.life_config[e_type]
+                    #  as we progress through levels the enemy life increases
                     new_enemy.life += round(
                         GLOBALS.level * 0.1) * new_enemy.life
                     self.enemiesGroup.add(new_enemy)
@@ -295,10 +302,11 @@ class GameLevel:
         self.background = SpaceBackground()
         self.hit_controller = HitExplosionController()
 
-    def build_level(self, level, enemies):
+    def build_level(self, level, enemies, life_config):
         """Creates the level structure"""
         self.level = level
-        self.enemy_army = EnemyArmy(level=level, pattern=enemies)
+        self.enemy_army = EnemyArmy(level=level, pattern=enemies,
+                                    life_config=life_config)
         self.player_controller = PlayerController()
         self.enemy_controller = HiveMind(self.enemy_army, level)
 
@@ -343,7 +351,6 @@ class GameLevel:
                         # render hit
                         self.hit_controller.add_hit_explosion(
                             enemy_item.rect.center)
-
                         enemy_item.take_damage(player_or_bullet.damage)
                         player_or_bullet.hit()
 
@@ -366,6 +373,7 @@ class LevelController:
         self.__game_level = GameLevel()
         self.__curr_level = 1
         self.__level_list = self.__load_levels_file()
+        self.__life_config = self.__load_life_config_file()
         self.__create_level(self.__curr_level)
         self.__ui = UIController()
 
@@ -383,7 +391,8 @@ class LevelController:
             return
         enemy_set = self.__level_list[next_level]
         self.__game_level.build_level(level=self.__curr_level,
-                                      enemies=enemy_set)
+                                      enemies=enemy_set,
+                                      life_config=self.__life_config)
 
     def execute(self) -> None:
         if GLOBALS.restart:
@@ -400,9 +409,17 @@ class LevelController:
         # render ui
         self.__ui.render(self.__game_level.player_controller)
 
+    # TODO: add test validation for file loading
     @staticmethod
     def __load_levels_file():
         data_levels = []
         with open('src/assets/levels.json') as f:
             data_levels = json.load(f)
         return data_levels
+
+    @staticmethod
+    def __load_life_config_file():
+        life_config = []
+        with open('src/assets/life_config.json') as f:
+            life_config = json.load(f)
+        return life_config
