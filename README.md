@@ -1,8 +1,6 @@
 # space-invaders-like
 
-pygame project from scratch, this is a challenge focus on use my current
-skills, this doesn't use tutorials that are based on existing "space invaders"
-projects, just learning how to use pygame and work with that.
+This is a pygame project from scratch, doing this as a personal challenge to use my current skills. I also avoided existing "Space Invaders" tutorials, Instead, I focused solely on learning Pygame from the documentation or forums and exploring its functionality independently.
 <img height="600" src="./src/assets/gameplay.png" title="gameplay screenshoot" width="600"/>
 
 ### requirements
