@@ -28,7 +28,7 @@ source venv/bin/activate
 
 ~~~bash
 # windows
-Script\activate.bat
+venv\Script\activate
 ~~~
 
 - then install python requirements
