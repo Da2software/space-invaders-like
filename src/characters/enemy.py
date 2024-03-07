@@ -23,7 +23,7 @@ def on_attack(function):
 
 
 class Enemy(pygame.sprite.Sprite, kinematics.Animator):
-    def __init__(self, x: int, y: int, size=40):
+    def __init__(self, x: int, y: int, size=48):
         pygame.sprite.Sprite.__init__(self)
         kinematics.Animator.__init__(self)
         self.tag = "enemy"

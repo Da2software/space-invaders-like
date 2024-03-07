@@ -20,6 +20,10 @@ class SoundController:
         self.sounds_dir = "src/assets/sounds/"
         self.library: List[SoundItem] = []
 
+    @staticmethod
+    def set_volume(volume: int) -> None:
+        pygame.mixer.Sound.set_volume(volume)
+
     def add_sound(self, name: str, file: str):
         new_sound = SoundItem(name, self.sounds_dir + file)
         self.library.append(new_sound)

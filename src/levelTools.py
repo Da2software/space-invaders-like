@@ -208,7 +208,7 @@ class UIController:
     def __init__(self):
         self.txt_score: str = "Score: "
         self.txt_player_life: str = "Life: "
-        self.txt_level: str = "Leve: "
+        self.txt_level: str = "Level: "
         self.txt_game_over: str = "GAME OVER"
         self.txt_restart: str = "press SPACE to restart"
         self.__blink_restart = False
