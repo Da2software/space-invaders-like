@@ -272,7 +272,7 @@ class UIController:
 
 
 class SpaceBackground:
-    """ this creates a background animated with start and planets """
+    """ this creates a background animated with stars and planets """
 
     def __init__(self, speed=1):
         self.img_height = 1200
